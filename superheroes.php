@@ -63,10 +63,38 @@ $superheroes = [
   ], 
 ];
 
-?>
+// Read and sanitize the search query from the query string
+$query = filter_input(INPUT_GET, 'query', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+$query = trim($query);
 
+// Find heroes whose name or alias matches the query (case-insensitive)
+$results = [];
+if ($query !== '') {
+    $search = strtolower(html_entity_decode($query, ENT_QUOTES, 'UTF-8'));
+    $results = array_filter($superheroes, function ($hero) use ($search) {
+        return strtolower($hero['name']) === $search
+            || strtolower($hero['alias']) === $search;
+    });
+}
+
+// Escape any value before it is printed to the page
+function e($value) {
+    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+}
+
+?>
+<?php if ($query === ''): ?>
 <ul>
 <?php foreach ($superheroes as $superhero): ?>
-  <li><?= $superhero['alias']; ?></li>
+  <li><?= e($superhero['alias']); ?></li>
 <?php endforeach; ?>
 </ul>
+<?php elseif (count($results) > 0): ?>
+<?php foreach ($results as $superhero): ?>
+<h3><?= e($superhero['alias']); ?></h3>
+<h4>A.K.A <?= e($superhero['name']); ?></h4>
+<p><?= e($superhero['biography']); ?></p>
+<?php endforeach; ?>
+<?php else: ?>
+<p class="not-found">Superhero not found</p>
+<?php endif; ?>
